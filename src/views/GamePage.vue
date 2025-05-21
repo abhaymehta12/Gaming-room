@@ -108,7 +108,7 @@ export default {
             this.startGame();
           }
         }, 1000);
-        if (this.playerInfo.id === this.group.shuffler) {
+        if (this.playerInfo && this.playerInfo.id === this.group.shuffler) {
           this.setRoles();
         }
       }
@@ -158,6 +158,10 @@ export default {
     },
     async gameOver() {
       this.message = "Time's Up !!";
+      if (!this.playerInfo) {
+        this.leaveGroup;
+        return;
+      }
       if (this.playerInfo.role === "Chor") {
         if (this.votedFor.role === "Raja") {
           this.message = "On target, Sharp Killer !";

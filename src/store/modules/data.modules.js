@@ -6,7 +6,8 @@ export default {
     state: {
         playerInfo: null,
         group: null,
-        gameStarted: false
+        gameStarted: false,
+        lounge: null
     },
     getters: {
     },
@@ -20,60 +21,32 @@ export default {
                 console.log(error);
             }
         },
-        async setGroups({ commit }, id) {
+        async setGroups({ commit }, payload) {
             try {
-                const data = await firebase.firestore().collection("members").where('status', '==', 'waiting').get();
-                let totalMembers = []
-                if (!data.empty) {
-                    data.docs.forEach((doc) => {
-                        totalMembers.push(doc.data());
-                    })
-                }
-                if (totalMembers.length > 3) {
-                    while (totalMembers.length > 0) {
-                        let grouping = totalMembers.splice(0, 4)
-                        if (grouping.length > 3) {
-                            let obj = { members: grouping, memberCount: grouping.length, gameStatus: 'ready', shuffler: grouping[0].id }
-                            const resp = await firebase.firestore().collection("groups").add(obj);
-                            await firebase.firestore().collection("groups").doc(resp.id).set({ id: resp.id }, { merge: true });
-                            let res = grouping.findIndex(x => x.id === id);
-                            obj.id = resp.id
-                            if (res >= 0) {
-                                commit("set_group", obj);
-                            }
-                        } else {
-                            setBots(grouping);
-                        }
-                    }
+                if (payload.memberCount === 4) {
+                    const resp = await firebase.firestore().collection("groups").add(payload);
+                    await firebase.firestore().collection("groups").doc(resp.id).set({ id: resp.id }, { merge: true });
+                    payload.id = resp.id;
+                    commit("set_group", payload);
                 } else {
-                    setBots(totalMembers);
+                    setBots(payload);
                 }
             } catch (error) {
                 console.log(error);
             }
             async function setBots(param) {
-                const actualMemberCount = param.length;
+                const actualMemberCount = param.members.length;
                 const names = ["abhay", "chotu", "shivam", "latika", "akash", "pallavi", "thor", "mak", "bitzz", "gabbar"];
-                for (let i = param.length; i < 4; i++) {
-                    param[i] = {
+                for (let i = actualMemberCount; i < 4; i++) {
+                    param.members[i] = {
                         name: names[Math.floor(Math.random() * names.length)],
                         id: Math.floor(Math.random() * 1001)
                     }
                 }
-                let admin
-                param.forEach(el => {
-                    if (el.name != 'test1' && el.status) {
-                        admin = el.id;
-                    }
-                })
-                let obj = { members: param, memberCount: actualMemberCount, gameStatus: 'ready', shuffler: admin }
-                const resp = await firebase.firestore().collection("groups").add(obj);
+                const resp = await firebase.firestore().collection("groups").add(param);
                 await firebase.firestore().collection("groups").doc(resp.id).set({ id: resp.id }, { merge: true });
-                let res = param.findIndex(x => x.id === id);
-                obj.id = resp.id;
-                if (res >= 0) {
-                    commit("set_group", obj);
-                }
+                param.id = resp.id;
+                commit("set_group", param);
             }
         },
         async addMember({ commit, dispatch }, payload) {
@@ -82,13 +55,33 @@ export default {
                 if (!query.empty) {
                     return "Name Already Exist";
                 } else {
-                    const resp = await firebase.firestore().collection("members").add({ name: payload.name, status: 'waiting' });
+                    let playerStatus = payload.type === 'lounge' ? 'inLounge' : 'waiting';
+                    const resp = await firebase.firestore().collection("members").add({ name: payload.name, status: playerStatus });
                     await firebase.firestore().collection("members").doc(resp.id).set({ id: resp.id }, { merge: true });
-                    commit("set_playerInfo", { name: payload.name, status: 'waiting', id: resp.id });
-                    if (payload.type === 'lounge') {
-                        console.group("Create Lounge");
+                    const player = { name: payload.name, status: playerStatus, id: resp.id };
+                    commit("set_playerInfo", player);
+                    if (playerStatus === 'inLounge') {
+                        const data = await firebase.firestore().collection("lounge").where("count", "<", 4).limit(1).get();
+                        let group = {};
+                        if (!data.empty) {
+                            group = data.docs[0].data();
+                        } else {
+                            group.members = [];
+                        }
+                        group.members.push(player);
+                        group.count = group.members.length;
+                        if (group.count === 1) {
+                            group.shuffler = player.id;
+                            const resp = await firebase.firestore().collection("lounge").add(group);
+                            firebase.firestore().collection("lounge").doc(resp.id).set({ id: resp.id }, { merge: true });
+                            group.id = resp.id;
+                        } else {
+                            firebase.firestore().collection("lounge").doc(group.id).set(group, { merge: true });
+                        }
+                        commit("set_lounge", group);
                     } else {
-                        dispatch('setGroups', resp.id);
+                        const obj = { members: [player], memberCount: 1, gameStatus: 'ready', shuffler: player.id };
+                        dispatch('setGroups', obj);
                     }
                 }
             } catch (error) {
@@ -97,21 +90,25 @@ export default {
         },
         deleteMember({ commit, state }, payload) {
             try {
-                let updatedGrp = state.group;
-                const groupMembers = state.group.members.filter(item => item.id !== payload);
+                let updatedGrp = state.group ? state.group : state.lounge;
+                const groupMembers = updatedGrp.members.filter(item => item.id !== payload);
                 let flagBots = true;
                 let members = 0;
                 groupMembers.forEach(ele => {
                     if (ele.status) {
                         flagBots = false;
-                        if (payload === state.group.shuffler) {
+                        if (payload === updatedGrp.shuffler) {
                             updatedGrp.shuffler = ele.id;
                         }
                         members++;
                     }
                 })
                 if (flagBots) {
-                    firebase.firestore().collection("groups").doc(state.group.id).delete();
+                    if (state.playerInfo.status === 'inLounge') {
+                        firebase.firestore().collection("lounge").doc(state.lounge.id).delete();
+                    } else {
+                        firebase.firestore().collection("groups").doc(state.group.id).delete();
+                    }
                 } else {
                     const names = ["abhay", "chotu", "shivam", "latika", "akash", "pallavi", "thor", "mak", "bitzz", "gabbar"];
                     let obj = {
@@ -121,7 +118,11 @@ export default {
                     groupMembers.push(obj);
                     updatedGrp.members = groupMembers;
                     updatedGrp.memberCount = members;
-                    firebase.firestore().collection("groups").doc(state.group.id).set(updatedGrp, { merge: true });
+                    if (state.playerInfo.status === 'inLounge') {
+                        firebase.firestore().collection("lounge").doc(state.lounge.id).set(updatedGrp, { merge: true });
+                    } else {
+                        firebase.firestore().collection("groups").doc(state.group.id).set(updatedGrp, { merge: true });
+                    }
                 }
                 firebase.firestore().collection("members").doc(payload).set({ status: "delete" }, { merge: true });
                 commit("clear_state");
@@ -167,10 +168,7 @@ export default {
             try {
                 let obj = {
                     chorKilled: payload.id,
-                    gameStatus: "round2"
-                }
-                if (state.group.gameStatus === 'round2') {
-                    obj.gameStatus = "over";
+                    gameStatus: state.group.gameStatus === 'round2' ? "over" : "round2"
                 }
                 await firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
             } catch (error) {
@@ -230,17 +228,64 @@ export default {
                     await firebase.firestore().collection("groups").doc(state.group.id).set({ gameStatus: currentGameStatus, members: groupMembers }, { merge: true });
                     commit("set_group", { ...state.group, gameStatus: currentGameStatus, members: groupMembers });
                 } else {
+                    firebase.firestore().collection("groups").doc(state.group.id).delete();
+                    let members = 0;
+                    let filterMembers = data.data().members.filter(el => el.status)
                     data.data().members.forEach(obj => {
                         if (obj.status) {
                             firebase.firestore().collection("members").doc(obj.id).set({ status: "waiting" }, { merge: true });
+                            members++;
                         }
                     });
-                    dispatch('setGroups', state.playerInfo.id);
+                    const group = { members: filterMembers, memberCount: members, gameStatus: 'ready', shuffler: data.data().shuffler };
+                    dispatch('setGroups', group);
                 }
             } catch (error) {
                 console.log(error);
             }
-        }
+        },
+        async joinLounge({ commit }, payload) {
+            try {
+                const data = await firebase.firestore().collection("lounge").doc(payload.id).get();
+                if (data.data().count === 4) {
+                    return "Group is full";
+                }
+                const query = await firebase.firestore().collection('members').where('name', '==', payload.name).where('status', '!=', 'delete').get();
+                if (!query.empty) {
+                    return "Name Already Exist";
+                } else {
+                    const resp = await firebase.firestore().collection("members").add({ name: payload.name, status: 'inLounge' });
+                    await firebase.firestore().collection("members").doc(resp.id).set({ id: resp.id }, { merge: true });
+                    const player = { name: payload.name, status: 'inLounge', id: resp.id };
+                    commit("set_playerInfo", player);
+                    if (data.exists) {
+                        data.data().count++;
+                        data.data().members.push(player)
+                        firebase.firestore().collection("lounge").doc(payload.id).set(data.data(), { merge: true });
+                        commit("set_lounge", data.data());
+                    } else {
+                        let group = {};
+                        group.members = [player];
+                        group.count = group.members.length;
+                        group.shuffler = player.id;
+                        const resp = await firebase.firestore().collection("lounge").add(group);
+                        firebase.firestore().collection("lounge").doc(resp.id).set({ id: resp.id }, { merge: true });
+                        commit("set_lounge", group);
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        },
+        startGame({ commit, dispatch, state }) {
+            try {
+                firebase.firestore().collection("lounge").doc(state.lounge.id).delete();
+                const obj = { members: state.lounge.members, memberCount: state.lounge.count, gameStatus: 'ready', shuffler: state.lounge.shuffler }
+                dispatch('setGroups', obj);
+            } catch (error) {
+                console.log(error);
+            }
+        },
     },
     mutations: {
         set_group: (state, data) => {
@@ -249,6 +294,9 @@ export default {
         set_playerInfo: (state, data) => {
             state.playerInfo = data;
         },
+        set_lounge: (state, data) => {
+            state.lounge = data;
+        },
         game_status: (state, data) => {
             state.gameStarted = data;
         },
@@ -256,6 +304,7 @@ export default {
             state.playerInfo = null;
             state.group = null;
             state.gameStarted = false;
+            state.lounge = null;
         },
     }
 }
