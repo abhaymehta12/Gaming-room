@@ -1,5 +1,5 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import Vue from 'vue';
+import Vuex from 'vuex';
 import dataModule from "./modules/data.modules.js";
 
 Vue.use(Vuex)

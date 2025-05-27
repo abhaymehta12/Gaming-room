@@ -61,7 +61,7 @@
             color="success"
             variant="tonal"
             :disabled="validate"
-            @click="joinLounge"
+            @click="joinExistingLounge"
             class="ma-5"
             >Done</v-btn
           >
@@ -105,7 +105,7 @@ export default {
       return !(this.name && this.name.length >= 3);
     },
     validateid() {
-      return !(this.lounge && this.lounge.length >= 3);
+      return !(this.lounge && this.lounge.length >= 18);
     },
   },
 
@@ -126,7 +126,7 @@ export default {
           : this.$router.push("/game");
       }
     },
-    async joinLounge() {
+    async joinExistingLounge() {
       let obj = {
         name: this.name,
         id: this.lounge,

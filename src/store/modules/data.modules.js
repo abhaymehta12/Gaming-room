@@ -1,5 +1,5 @@
-import firebase from 'firebase/compat/app'
-import 'firebase/compat/firestore'
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
 
 export default {
     namespaced: true,
@@ -25,7 +25,7 @@ export default {
             try {
                 if (payload.memberCount === 4) {
                     const resp = await firebase.firestore().collection("groups").add(payload);
-                    await firebase.firestore().collection("groups").doc(resp.id).set({ id: resp.id }, { merge: true });
+                    firebase.firestore().collection("groups").doc(resp.id).set({ id: resp.id }, { merge: true });
                     payload.id = resp.id;
                     commit("set_group", payload);
                 } else {
@@ -110,14 +110,18 @@ export default {
                         firebase.firestore().collection("groups").doc(state.group.id).delete();
                     }
                 } else {
-                    const names = ["abhay", "chotu", "shivam", "latika", "akash", "pallavi", "thor", "mak", "bitzz", "gabbar"];
-                    let obj = {
-                        name: names[Math.floor(Math.random() * names.length)],
-                        id: Math.floor(Math.random() * 1001)
+                    if (state.playerInfo.status !== 'inLounge') {
+                        const names = ["abhay", "chotu", "shivam", "latika", "akash", "pallavi", "thor", "mak", "bitzz", "gabbar"];
+                        let obj = {
+                            name: names[Math.floor(Math.random() * names.length)],
+                            id: Math.floor(Math.random() * 1001)
+                        }
+                        groupMembers.push(obj);
+                        updatedGrp.memberCount = members;
+                    } else {
+                        updatedGrp.count = members;
                     }
-                    groupMembers.push(obj);
                     updatedGrp.members = groupMembers;
-                    updatedGrp.memberCount = members;
                     if (state.playerInfo.status === 'inLounge') {
                         firebase.firestore().collection("lounge").doc(state.lounge.id).set(updatedGrp, { merge: true });
                     } else {
@@ -154,7 +158,7 @@ export default {
                         firebase.firestore().collection("members").doc(obj.id).set({ status: "inGame" }, { merge: true });
                     }
                     if (obj.id === state.playerInfo.id) {
-                        state.playerInfo.role = obj.role;
+                        state.playerInfo = obj;
                     }
                 });
                 obj.members = groupMembers;
@@ -198,10 +202,7 @@ export default {
                             ele.role = "over";
                         }
                     })
-                    let obj = {
-                        members: groupMembers
-                    }
-                    firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
+                    firebase.firestore().collection("groups").doc(state.group.id).set({ members: groupMembers }, { merge: true });
                     return `${state.playerInfo.role} is Killed by the soldier.`;
                 } else {
                     return "Good Luck, Try Again.";
@@ -225,7 +226,7 @@ export default {
                         })
                         currentGameStatus = "ready";
                     }
-                    await firebase.firestore().collection("groups").doc(state.group.id).set({ gameStatus: currentGameStatus, members: groupMembers }, { merge: true });
+                    firebase.firestore().collection("groups").doc(state.group.id).set({ gameStatus: currentGameStatus, members: groupMembers }, { merge: true });
                     commit("set_group", { ...state.group, gameStatus: currentGameStatus, members: groupMembers });
                 } else {
                     firebase.firestore().collection("groups").doc(state.group.id).delete();
@@ -247,7 +248,10 @@ export default {
         async joinLounge({ commit }, payload) {
             try {
                 const data = await firebase.firestore().collection("lounge").doc(payload.id).get();
-                if (data.data().count === 4) {
+                const loungeInfo = data.data();
+                if (!data.exists) {
+                    return "No group found";
+                } else if (loungeInfo.count === 4) {
                     return "Group is full";
                 }
                 const query = await firebase.firestore().collection('members').where('name', '==', payload.name).where('status', '!=', 'delete').get();
@@ -258,20 +262,10 @@ export default {
                     await firebase.firestore().collection("members").doc(resp.id).set({ id: resp.id }, { merge: true });
                     const player = { name: payload.name, status: 'inLounge', id: resp.id };
                     commit("set_playerInfo", player);
-                    if (data.exists) {
-                        data.data().count++;
-                        data.data().members.push(player)
-                        firebase.firestore().collection("lounge").doc(payload.id).set(data.data(), { merge: true });
-                        commit("set_lounge", data.data());
-                    } else {
-                        let group = {};
-                        group.members = [player];
-                        group.count = group.members.length;
-                        group.shuffler = player.id;
-                        const resp = await firebase.firestore().collection("lounge").add(group);
-                        firebase.firestore().collection("lounge").doc(resp.id).set({ id: resp.id }, { merge: true });
-                        commit("set_lounge", group);
-                    }
+                    loungeInfo.count++;
+                    loungeInfo.members.push(player);
+                    firebase.firestore().collection("lounge").doc(payload.id).set(loungeInfo, { merge: true });
+                    commit("set_lounge", loungeInfo);
                 }
             } catch (error) {
                 console.log(error);

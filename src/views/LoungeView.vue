@@ -4,7 +4,7 @@
        <span class="header">Welcome to our Lounge !!</span>
       <v-icon @click="leaveGroup" width: size="x-large">mdi-close</v-icon>
     </div>
-    <v-avatar color="secondary">
+    <v-avatar color="secondary" class="mt-4">
       Members: {{ lounge.count }}
     </v-avatar>
     <v-card class="pa-2 mt-5" v-for="(ele, m) in lounge.members" :key="m">
