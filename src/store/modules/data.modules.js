@@ -7,16 +7,19 @@ export default {
         playerInfo: null,
         group: null,
         gameStarted: false,
-        lounge: null
+        lounge: null,
+        unsubscribe: null
     },
     getters: {
     },
     actions: {
         async getGroupInfo({ commit, state }) {
             try {
-                const data = await firebase.firestore().collection("groups").doc(state.group.id).get();
-                commit("set_group", data.data());
-                commit("game_status", true);
+                if (state.group && state.group.id) {
+                    const data = await firebase.firestore().collection("groups").doc(state.group.id).get();
+                    commit("set_group", data.data());
+                    commit("game_status", true);
+                }
             } catch (error) {
                 console.log(error);
             }
@@ -129,6 +132,9 @@ export default {
                     }
                 }
                 firebase.firestore().collection("members").doc(payload).set({ status: "delete" }, { merge: true });
+                if (state.unsubscribe) {
+                    state.unsubscribe();
+                }
                 commit("clear_state");
             } catch (error) {
                 console.log(error);
@@ -137,7 +143,7 @@ export default {
         async setRoles({ commit, state }) {
             let roles = []
             try {
-                let obj = state.group;
+                let groupInfo = state.group;
                 const groupMembers = state.group.members;
                 if (state.group.gameStatus === "round2") {
                     groupMembers.forEach(el => {
@@ -147,7 +153,7 @@ export default {
                     })
                 } else {
                     roles = ["Raja", "Mantri", "Chor", "Sipahi"];
-                    obj.gameStatus = "progress";
+                    groupInfo.gameStatus = "progress";
                 }
                 const shuffled = roles.sort(() => 0.5 - Math.random());
                 groupMembers.forEach((obj, index) => {
@@ -155,15 +161,16 @@ export default {
                         obj.role = shuffled[index];
                     }
                     if (obj.status && obj.status !== "inGame") {
+                        obj.status = "inGame";
                         firebase.firestore().collection("members").doc(obj.id).set({ status: "inGame" }, { merge: true });
                     }
                     if (obj.id === state.playerInfo.id) {
                         state.playerInfo = obj;
                     }
                 });
-                obj.members = groupMembers;
-                await firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
-                commit("set_group", obj);
+                groupInfo.members = groupMembers;
+                await firebase.firestore().collection("groups").doc(state.group.id).set(groupInfo, { merge: true });
+                commit("set_group", groupInfo);
             } catch (error) {
                 console.log(error);
             }
@@ -280,6 +287,22 @@ export default {
                 console.log(error);
             }
         },
+        listenToGroupCollection({ commit, state }) {
+            try {
+                const unsubscribe = firebase.firestore().collection('groups').onSnapshot(snapshot => {
+                    let group = {};
+                    snapshot.forEach(doc => {
+                        if (state.group && state.group.id === doc.id) {
+                            group = doc.data();
+                            commit("set_group", group);
+                        }
+                    });
+                });
+                commit('set_unsubscribe', unsubscribe);
+            } catch (error) {
+                console.log(error);
+            }
+        },
     },
     mutations: {
         set_group: (state, data) => {
@@ -294,11 +317,15 @@ export default {
         game_status: (state, data) => {
             state.gameStarted = data;
         },
+        set_unsubscribe: (state, data) => {
+            state.unsubscribe = data;
+        },
         clear_state: (state) => {
             state.playerInfo = null;
             state.group = null;
             state.gameStarted = false;
             state.lounge = null;
+            state.unsubscribe = null;
         },
     }
 }

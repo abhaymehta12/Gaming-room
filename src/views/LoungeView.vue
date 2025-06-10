@@ -48,13 +48,17 @@ export default {
       if (this.lounge && this.lounge.shuffler === this.playerInfo.id) {
         return true;
       } else {
-        return false;
+        return true;
       }
     },
   },
 
   methods: {
-    ...mapActions("dataModule", ["startGame", "deleteMember"]),
+    ...mapActions("dataModule", [
+      "startGame",
+      "deleteMember",
+      "listenToGroupCollection",
+    ]),
 
     onUnload() {
       if (this.playerInfo && !this.continueFlag) {
@@ -65,6 +69,9 @@ export default {
       this.continueFlag = true;
       await this.startGame();
       this.$router.push("/game");
+      if (this.lounge.count > 1) {
+        this.listenToGroupCollection();
+      }
     },
     leaveGroup() {
       this.$router.push("/");
