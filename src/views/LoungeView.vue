@@ -7,21 +7,24 @@
     <v-avatar color="secondary" class="mt-4">
       Members: {{ lounge.count }}
     </v-avatar>
-    <v-card class="pa-2 mt-5" v-for="(ele, m) in lounge.members" :key="m">
-      <v-card-title class="justify-center">{{ ele.name }}</v-card-title>
+    <v-card class="pa-2 mt-5 d-flex justify-space-around">
+      <v-card-title v-for="(ele, m) in lounge.members" :key="m" class="justify-center">{{ ele.name }}</v-card-title>
     </v-card>
     <v-btn v-if="showButton" @click="addGroup" class="mt-5">Lets Go !!</v-btn>
+    <Tictactoe />
   </v-container>
   <Loading v-else />
 </template>
 
 <script>
+import Tictactoe from "../components/tictactoe.vue";
 import Loading from "../components/loading.vue";
 import { mapState, mapActions } from "vuex";
 export default {
   name: "Lounge",
   components: {
     Loading,
+    Tictactoe,
   },
 
   data: () => ({
