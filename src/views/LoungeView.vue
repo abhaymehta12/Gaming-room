@@ -4,13 +4,13 @@
        <span class="header">Welcome to our Lounge !!</span>
       <v-icon @click="leaveGroup" width: size="x-large">mdi-close</v-icon>
     </div>
-    <v-avatar color="secondary" class="mt-4">
+    <v-avatar color="secondary" class="mt-4 mr-16">
       Members: {{ lounge.count }}
     </v-avatar>
-    <v-card class="pa-2 mt-5 d-flex justify-space-around">
+    <v-btn v-if="showButton" @click="addGroup" class="mt-5 ml-16">Lets Go !!</v-btn>
+    <v-card class="pa-2 mt-5 d-flex justify-space-around flex-wrap">
       <v-card-title v-for="(ele, m) in lounge.members" :key="m" class="justify-center">{{ ele.name }}</v-card-title>
     </v-card>
-    <v-btn v-if="showButton" @click="addGroup" class="mt-5">Lets Go !!</v-btn>
     <Tictactoe />
   </v-container>
   <Loading v-else />
@@ -92,5 +92,8 @@ export default {
 .v-avatar {
   width: 100px !important;
   height: 100px !important;
+}
+.v-card__title {
+  padding: 5px;
 }
 </style>

@@ -1,7 +1,5 @@
 <template>
-  <div>
-    <h1>Let's Play !!</h1>
-
+  <div class="d-flex justify-space-around mt-10">
     <div class="board">
       <div
         class="square"
@@ -12,10 +10,13 @@
         {{ val }}
       </div>
     </div>
-
-    <h2>{{ endMessage }}</h2>
-
-    <v-btn class="restartButton pa-4" @click="restartButton">Restart</v-btn>
+    <div>
+      <h1>Let's Play !!</h1>
+      <h2>{{ endMessage }}</h2>
+      <v-btn class="restartButton pa-5 mt-5" @click="restartButton"
+        >Restart</v-btn
+      >
+    </div>
   </div>
 </template>
 
@@ -41,6 +42,83 @@ export default {
   }),
 
   methods: {
+    makeAIMove() {
+      let blockFlag = false;
+      let winFlag = false;
+      let blockIndex;
+
+      for (let i = 0; i < this.winning_combinations.length; i++) {
+        const [a, b, c] = this.winning_combinations[i];
+        if (
+          this.squares[a] === "O" &&
+          this.squares[b] === "O" &&
+          !this.squares[c]
+        ) {
+          this.squares[c] = this.currentPlayer;
+          winFlag = true;
+        } else if (
+          this.squares[a] === "O" &&
+          !this.squares[b] &&
+          this.squares[c] === "O"
+        ) {
+          this.squares[b] = this.currentPlayer;
+          winFlag = true;
+        } else if (
+          !this.squares[a] &&
+          this.squares[b] === "O" &&
+          this.squares[c] === "O"
+        ) {
+          this.squares[a] = this.currentPlayer;
+          winFlag = true;
+        } else if (
+          this.squares[a] === "X" &&
+          this.squares[b] === "X" &&
+          !this.squares[c] &&
+          !blockFlag
+        ) {
+          blockIndex = c;
+          blockFlag = true;
+        } else if (
+          this.squares[a] === "X" &&
+          !this.squares[b] &&
+          this.squares[c] === "X" &&
+          !blockFlag
+        ) {
+          blockIndex = b;
+          blockFlag = true;
+        } else if (
+          !this.squares[a] &&
+          this.squares[b] === "X" &&
+          this.squares[c] === "X" &&
+          !blockFlag
+        ) {
+          blockIndex = a;
+          blockFlag = true;
+        }
+
+        if (winFlag) {
+          blockFlag = true;
+          break;
+        }
+      }
+
+      if (blockIndex > -1 && !winFlag) {
+        this.squares[blockIndex] = this.currentPlayer;
+        this.checkMove();
+        return;
+      }
+      const tryRandom = () => {
+        const index = Math.floor(Math.random() * 9);
+        if (this.squares[index]) {
+          setTimeout(tryRandom, 50);
+          return;
+        }
+        this.squares[index] = this.currentPlayer;
+        this.checkMove();
+      };
+
+      tryRandom();
+    },
     playMove(inx) {
       if (this.squares[inx]) {
         return;
@@ -55,77 +133,8 @@ export default {
         return;
       }
       if (this.currentPlayer === "O") {
-        setTimeout((retry) => {
-          let blockFlag = false;
-          let winFlag = false;
-          let blockIndex;
-          for (let i = 0; i < this.winning_combinations.length; i++) {
-            const [a, b, c] = this.winning_combinations[i];
-            if (
-              this.squares[a] === "O" &&
-              this.squares[b] === "O" &&
-              !this.squares[c]
-            ) {
-              this.squares[c] = this.currentPlayer;
-              winFlag = true;
-            } else if (
-              this.squares[a] === "O" &&
-              !this.squares[b] &&
-              this.squares[c] === "O"
-            ) {
-              this.squares[b] = this.currentPlayer;
-              winFlag = true;
-            } else if (
-              !this.squares[a] &&
-              this.squares[b] === "O" &&
-              this.squares[c] === "O"
-            ) {
-              this.squares[a] = this.currentPlayer;
-              winFlag = true;
-            } else if (
-              this.squares[a] === "X" &&
-              this.squares[b] === "X" &&
-              !this.squares[c] &&
-              !blockFlag
-            ) {
-              blockIndex = c;
-              blockFlag = true;
-            } else if (
-              this.squares[a] === "X" &&
-              !this.squares[b] &&
-              this.squares[c] === "X" &&
-              !blockFlag
-            ) {
-              blockIndex = b;
-              blockFlag = true;
-            } else if (
-              !this.squares[a] &&
-              this.squares[b] === "X" &&
-              this.squares[c] === "X" &&
-              !blockFlag
-            ) {
-              blockIndex = a;
-              blockFlag = true;
-            }
-            if (winFlag) {
-              blockFlag = true;
-              break;
-            }
-          }
-          if (blockIndex > -1 && !winFlag) {
-            this.squares[blockIndex] = this.currentPlayer;
-          }
-          if (!blockFlag) {
-            const index = Math.floor(Math.random() * 9);
-            if (this.squares[index]) {
-              setTimeout(retry, 100);
-              return;
-            }
-            if (this.currentPlayer) {
-              this.squares[index] = this.currentPlayer;
-            }
-          }
-          this.checkMove();
+        setTimeout(() => {
+          this.makeAIMove();
         }, 1000);
       }
     },
@@ -190,13 +199,12 @@ h1 {
   text-align: center;
 }
 h2 {
-  margin-top: 30px;
+  margin-top: 120px;
   text-align: center;
 }
 
 .board {
-  margin: auto;
-  max-width: 300px;
+  width: 300px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 3px;
@@ -211,6 +219,7 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
+  color: black;
 }
 .square:hover {
   background-color: #ffffe0;
