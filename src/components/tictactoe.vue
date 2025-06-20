@@ -102,6 +102,11 @@ export default {
         }
       }
 
+      if (winFlag) {
+        this.checkMove();
+        return;
+      }
+
       if (blockIndex > -1 && !winFlag) {
         this.squares[blockIndex] = this.currentPlayer;
         this.checkMove();
@@ -184,9 +189,7 @@ export default {
     },
 
     restartButton() {
-      for (let i = 0; i < this.squares.length; i++) {
-        this.squares[i] = "";
-      }
+      this.squares = ["", "", "", "", "", "", "", "", ""];
       this.endMessage = `X's turn!`;
       this.currentPlayer = this.players[0];
     },

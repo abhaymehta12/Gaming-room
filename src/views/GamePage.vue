@@ -137,9 +137,7 @@ export default {
       "gameRoundsOver",
     ]),
     submit() {
-      if (this.chat) {
-        console.log(this.chat);
-      }
+      this.chat = "";
     },
     onUnload() {
       if (this.playerInfo) {
@@ -161,6 +159,9 @@ export default {
       if (!this.playerInfo) {
         this.leaveGroup;
         return;
+      }
+      if (!this.votedFor) {
+        this.votedFor = this.playerInfo;
       }
       if (this.playerInfo.role === "Chor") {
         if (this.votedFor.role === "Raja") {
