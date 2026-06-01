@@ -39,6 +39,7 @@ export default {
       [0, 4, 8],
       [2, 4, 6],
     ],
+    isProcessing: false
   }),
 
   methods: {
@@ -110,6 +111,7 @@ export default {
       if (blockIndex > -1 && !winFlag) {
         this.squares[blockIndex] = this.currentPlayer;
         this.checkMove();
+        this.isProcessing = false;
         return;
       }
       const tryRandom = () => {
@@ -120,21 +122,30 @@ export default {
         }
         this.squares[index] = this.currentPlayer;
         this.checkMove();
+        this.isProcessing = false;
       };
 
       tryRandom();
     },
+
     playMove(inx) {
       if (this.squares[inx]) {
+        return;
+      }
+      if (!this.isProcessing) {
+        this.isProcessing = true;
+      } else {
         return;
       }
       if (this.currentPlayer) {
         this.squares[inx] = this.currentPlayer;
       } else {
+        this.isProcessing = false;
         return;
       }
       let resp = this.checkMove();
       if (!resp) {
+        this.isProcessing = false;
         return;
       }
       if (this.currentPlayer === "O") {
@@ -192,6 +203,7 @@ export default {
       this.squares = ["", "", "", "", "", "", "", "", ""];
       this.endMessage = `X's turn!`;
       this.currentPlayer = this.players[0];
+      this.isProcessing = false;
     },
   },
 };

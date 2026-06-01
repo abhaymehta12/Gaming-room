@@ -51,7 +51,7 @@ export default {
       if (this.lounge && this.lounge.shuffler === this.playerInfo.id) {
         return true;
       } else {
-        return true;
+        return false;
       }
     },
   },
