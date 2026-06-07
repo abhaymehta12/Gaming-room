@@ -179,6 +179,7 @@ export default {
             try {
                 let obj = {
                     chorKilled: payload.id,
+                    gameStatus: state.group.gameStatus === 'round2' ? "over" : "round2"
                 }
                 await firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
             } catch (error) {
@@ -213,10 +214,6 @@ export default {
                     firebase.firestore().collection("groups").doc(state.group.id).set({ members: groupMembers }, { merge: true });
                      return `${roleKilled} is Killed by Chor.`;   
                 } else {
-                    let obj = {
-                        gameStatus: state.group.gameStatus === 'round2' ? "over" : "round2"
-                    }
-                    await firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
                     return "Good Luck, Try Again.";
                 }
             } catch (error) {
@@ -318,7 +315,6 @@ export default {
         },
         set_lounge: (state, data) => {
             state.lounge = data;
-            console.log(data)
         },
         game_status: (state, data) => {
             state.gameStarted = data;
