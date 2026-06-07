@@ -6,7 +6,7 @@
         >Game Starts in {{ shuffleTime }}</span
       >
       <span class="timer" v-if="gameTime && group.gameStatus !== 'round2'">{{
-        gameTime
+        gameTimegetResults
       }}</span>
       <span class="timerRound2" v-if="gameTime && group.gameStatus === 'round2'"
         >Round 2: {{ gameTime }}</span
@@ -133,6 +133,7 @@ export default {
       "setRoles",
       "getGroupInfo",
       "restartGame",
+       "setResults",
       "getResults",
       "gameRoundsOver",
     ]),
@@ -169,6 +170,7 @@ export default {
           await this.gameRoundsOver(this.votedFor);
         } else {
           this.message = "Just Missed, One More Try !";
+          await this.setResults(this.votedFor);
         }
       } else if (
         this.playerInfo.role === "Raja" &&
