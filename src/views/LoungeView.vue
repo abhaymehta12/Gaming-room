@@ -1,6 +1,6 @@
 <template>
   <v-container v-if="lounge" class="text-center">
-    <div class="text-right">
+    <div class="d-flex justify-space-between">
        <span class="header">Welcome to our Lounge !!</span>
       <v-icon @click="leaveGroup" width: size="x-large">mdi-close</v-icon>
     </div>
@@ -85,8 +85,6 @@ export default {
 
 <style scoped>
 .header {
-  position: absolute;
-  left: 43%;
   color: coral;
 }
 .v-avatar {

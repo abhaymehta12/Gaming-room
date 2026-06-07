@@ -1,6 +1,6 @@
 <template>
   <v-container class="pa-4" fluid>
-    <div class="text-right">
+    <div class="d-flex justify-space-between">
       <span class="message" v-if="message">{{ message }}</span>
       <span class="shuffleTimer" v-if="shuffleTime"
         >Game Starts in {{ shuffleTime }}</span
@@ -13,6 +13,7 @@
       >
       <v-icon @click="leaveGroup" size="x-large">mdi-close</v-icon>
     </div>
+    <div class="mt-1 mb-1">Click on Rollin to vote.</div>
     <v-row v-if="playerInfo && group" justify="center" class="mt-1">
       <v-col cols="6" v-for="(ele, n) in group.members" :key="n">
         <v-card class="pa-3">
@@ -204,15 +205,9 @@ export default {
 </script>
 
 <style scoped>
-.timer {
-  position: absolute;
-  left: 50%;
-}
 .shuffleTimer,
 .message,
 .timerRound2 {
-  position: absolute;
-  left: 45%;
   color: coral;
 }
 .rollin {
@@ -220,5 +215,18 @@ export default {
 }
 .divider {
   margin-top: 53px;
+}
+
+@media (min-width: 600px) {
+  .timer {
+    position: absolute;
+    left: 50%;
+  }
+  .shuffleTimer,
+  .message,
+  .timerRound2 {
+    position: absolute;
+    left: 45%;
+  }
 }
 </style>

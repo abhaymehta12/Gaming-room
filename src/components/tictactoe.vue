@@ -1,6 +1,13 @@
 <template>
-  <div class="d-flex justify-space-around mt-10">
-    <div class="board">
+  <div class="d-flex align-center justify-center justify-sm-space-around mt-10 flex-column flex-sm-row">
+    <div>
+      <h1>Let's Play !!</h1>
+      <h2 class="mt-sm-1">{{ endMessage }}</h2>
+      <v-btn class="restartButton pa-5 mt-5" @click="restartButton"
+        >Restart</v-btn
+      >
+    </div>
+    <div class="board mt-2">
       <div
         class="square"
         @click="playMove(m)"
@@ -9,13 +16,6 @@
       >
         {{ val }}
       </div>
-    </div>
-    <div>
-      <h1>Let's Play !!</h1>
-      <h2>{{ endMessage }}</h2>
-      <v-btn class="restartButton pa-5 mt-5" @click="restartButton"
-        >Restart</v-btn
-      >
     </div>
   </div>
 </template>
@@ -246,5 +246,11 @@ h2 {
   border: 1px solid #000000;
   border-radius: 40px;
   font-size: 18px;
+}
+
+@media (max-width: 599px) {
+  h2 {
+    margin-top: 0;
+  }
 }
 </style>

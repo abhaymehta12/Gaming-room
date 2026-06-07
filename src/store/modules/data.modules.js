@@ -210,7 +210,11 @@ export default {
                         }
                     })
                     firebase.firestore().collection("groups").doc(state.group.id).set({ members: groupMembers }, { merge: true });
-                    return `${state.playerInfo.role} is Killed by the soldier.`;
+                    if (state.playerInfo.role === 'over') {
+                        return `Chor is Killed by the soldier.`;
+                    } else {
+                        return `${state.playerInfo.role} is Killed by the soldier.`;
+                    }    
                 } else {
                     return "Good Luck, Try Again.";
                 }
@@ -313,6 +317,7 @@ export default {
         },
         set_lounge: (state, data) => {
             state.lounge = data;
+            console.log(data)
         },
         game_status: (state, data) => {
             state.gameStarted = data;
