@@ -13,7 +13,7 @@
       >
       <v-icon @click="leaveGroup" size="x-large">mdi-close</v-icon>
     </div>
-    <div class="mt-1 mb-1">Click on Rollin to vote.</div>
+    <div class="mt-1">Click on Rollin to vote.</div>
     <v-row v-if="playerInfo && group" justify="center" class="mt-1">
       <v-col cols="6" v-for="(ele, n) in group.members" :key="n">
         <v-card class="pa-3">
@@ -133,7 +133,6 @@ export default {
       "setRoles",
       "getGroupInfo",
       "restartGame",
-      "setResults",
       "getResults",
       "gameRoundsOver",
     ]),
@@ -170,7 +169,6 @@ export default {
           await this.gameRoundsOver(this.votedFor);
         } else {
           this.message = "Just Missed, One More Try !";
-          await this.setResults(this.votedFor);
         }
       } else if (
         this.playerInfo.role === "Raja" &&

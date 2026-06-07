@@ -175,17 +175,6 @@ export default {
                 console.log(error);
             }
         },
-        async setResults({ commit, state }, payload) {
-            try {
-                let obj = {
-                    chorKilled: payload.id,
-                    gameStatus: state.group.gameStatus === 'round2' ? "over" : "round2"
-                }
-                await firebase.firestore().collection("groups").doc(state.group.id).set(obj, { merge: true });
-            } catch (error) {
-                console.log(error);
-            }
-        },
         async gameRoundsOver({ commit, state }, payload) {
             try {
                 let obj = {
@@ -210,11 +199,7 @@ export default {
                         }
                     })
                     firebase.firestore().collection("groups").doc(state.group.id).set({ members: groupMembers }, { merge: true });
-                    if (state.playerInfo.role === 'over') {
-                        return `Chor is Killed by the soldier.`;
-                    } else {
-                        return `${state.playerInfo.role} is Killed by the soldier.`;
-                    }    
+                    return `Chor is Killed by the soldier.`;   
                 } else {
                     return "Good Luck, Try Again.";
                 }
